@@ -1,8 +1,9 @@
 <?php
 require_once './init/db.php';
+ob_start();
 
-if ( isset($_SESSION['info'] )  ) {
-    header('Location: http://localhost:8080/login_signup_php/dashboard/index.php');
+if (isset($_SESSION['info'])) {
+	header('Location: http://localhost:8080/login_signup_php/dashboard/index.php');
 }
 
 
@@ -11,7 +12,7 @@ if (isset($_POST['login'])) {
 	$password = htmlspecialchars(strip_tags($_POST['password']));
 	$errors = [];
 
-	if (  empty($email) || empty($password) ) {
+	if (empty($email) || empty($password)) {
 		$errors[] = 'email or password is required';
 	} else {
 		$sql = "SELECT `username`,`email`,`password`  AS `hashpassword`   FROM `users` WHERE `email`=? LIMIT 1";
@@ -20,23 +21,37 @@ if (isset($_POST['login'])) {
 		$stmt->execute();
 		$stmt->bind_result($username, $email, $hashpassword);
 		$stmt->store_result();
-		if ($stmt->num_rows > 0) {	
+		if ($stmt->num_rows > 0) {
 			$stmt->fetch();
-			if (password_verify($password, $hashpassword ) ) {
-				//    create session
-				$_SESSION['info']=[
-					'username'=>$username,
-					'email'=>$email
-				];
-				echo  "<script>
-				window.location.assign('./dashboard/index.php');
-				</script>";
+		
+		
+			if (password_verify($password, $hashpassword)) {
+					// create session
+						$_SESSION['info'] = [
+							'username' => $username,
+							'email' => $email
+						];
+
+
+				if (isset($_POST['rememberme']) && $_POST['rememberme']=='on'  ) {
+                 
+					// user wants to ssave therir password
+					setcookie('rememberMeEmail', $email,  time() + (60 * 60 * 5));
+					setcookie('rememberMePassword', $password,  time() + (60 * 60 * 5));
+		
+					header('Location:http://localhost:8080/login_signup_php/dashboard/index.php');
+				} else {
+					header('Location:http://localhost:8080/login_signup_php/dashboard/index.php');
+				}
+
+
 			} else {
-				$errors[]='password incorrect';
+				$errors[] = 'password incorrect';
 			}
-			
+
+
 		} else {
-			$errors[]='invalid emaail address';
+			$errors[] = 'invalid email address';
 		}
 	}
 }
@@ -74,21 +89,26 @@ if (isset($_POST['login'])) {
 				<div class="input-group-prepend">
 					<span class="input-group-text"><i class="fas fa-user-tie"></i></span>
 				</div>
-				<input type="email" name="email" class="form-control" placeholder="email" />
+				<input type="email" name="email" value="<?= @$_COOKIE['rememberMeEmail'] ?>" class="form-control" placeholder="email" />
 			</div><br />
 
 			<div class="input-group">
 				<div class="input-group-prepend">
 					<span class="input-group-text"><i class="fas fa-user-tie"></i></span>
 				</div>
-				<input type="password" name="password" class="form-control" placeholder="password" />
-			</div><br />
+				<input type="password" name="password" value="<?= @$_COOKIE['rememberMePassword'] ?>" class="form-control" placeholder="password" />
+			</div>
 
-			<br />
-			<!-- <div class="checkbox">
-              <label><input type="checkbox" value=""/> Remember me</label>
-            </div> -->
-			<br />
+
+			<?php if ( ! isset(  $_COOKIE['rememberMeEmail']  )   ): ?>
+			<div class=" form-group">
+				<input type="checkbox" name="rememberme"> Remember me
+			</div>
+			<?php endif;?>
+
+			<br>
+			<br>
+
 			<button type="submit" name="login" class="btn btn-success"><span class="glyphicon glyphicon-off"></span> Login</button>
 
 			<button type="button" class="btn btn-info"><span class="glyphicon glyphicon-remove"></span>Login with Facebook </button><br />
