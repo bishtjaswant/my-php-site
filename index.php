@@ -27,7 +27,7 @@ if (isset($_POST['login'])) {
 		
 			if (password_verify($password, $hashpassword)) {
 					// create session
-						$_SESSION['info'] = [
+			 			$_SESSION['info'] = [
 							'username' => $username,
 							'email' => $email
 						];
